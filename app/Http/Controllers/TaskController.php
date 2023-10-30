@@ -103,7 +103,6 @@ class TaskController extends Controller
         }
     }
 
-
     /**
      * Remove the specified resource from storage.
      */
@@ -112,16 +111,20 @@ class TaskController extends Controller
         $this->taskModel->destroy($task->id);
     }
 
-    public function getStatistics() {
+    public function getStatistics()
+    {
+        // Retrieve all users with their associated tasks
         $usersWithTasks = $this->userModel
             ->with(['tasks'])
             ->get();
 
+        // Map and process each user to group their tasks by status
         $groupedUsers = $usersWithTasks->map(function ($user) {
             $dueTasks = [];
             $inProgressTasks = [];
             $completedTasks = [];
 
+            // Iterate through the user's tasks and categorize them by status
             foreach ($user->tasks as $task) {
                 if ($task->status === 'due') {
                     $dueTasks[] = $task;
@@ -132,6 +135,7 @@ class TaskController extends Controller
                 }
             }
 
+            // Assign the categorized tasks to the user object
             $user->due_tasks = $dueTasks;
             $user->in_progress_tasks = $inProgressTasks;
             $user->completed_tasks = $completedTasks;
@@ -139,6 +143,7 @@ class TaskController extends Controller
             return $user;
         });
 
+        // Return the users with their tasks grouped by status
         return $groupedUsers;
     }
 }

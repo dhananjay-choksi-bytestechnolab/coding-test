@@ -6,7 +6,14 @@ use Illuminate\Http\Request;
 
 class GeneralController extends Controller
 {
-    public function getAppSettings() {
+    /**
+     * Get application settings.
+     *
+     * @return array
+     */
+    public function getAppSettings()
+    {
+        // Retrieve the application settings from the configuration.
         return config('settings');
     }
 }
