@@ -25,6 +25,19 @@ class StoreTaskRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phase_id' => ['required', 'integer', 'exists:phases,id'],
             'user_id' => ['required', 'integer', 'exists:users,id'],
+            'due_date' => ['required', 'date', 'after:now'], // Ensures that due_date is after the current date
+        ];
+    }
+
+    /**
+     * Get custom error messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'due_date.after' => 'The due date must be a date after the current date.',
         ];
     }
 }

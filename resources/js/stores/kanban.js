@@ -8,12 +8,15 @@ export const useKanbanStore = defineStore('kanban', {
         phases: [],
         users: [],
         creatingTask: false,
+        updatingTask: false,
         creatingTaskProps: {
           name: '',
           phase_id: null,
           user_id: null,
         },
         self: null,
+        appSettings: {},
+        userStatistics: []
     }
   },
   actions: {
@@ -21,6 +24,8 @@ export const useKanbanStore = defineStore('kanban', {
       this.hoveredName = 'nothing'
     },
     selectTask(task) {
+        console.log("selectTask");
+        console.log("task : ", task);
         this.selectedTask = task
     },
     unselectTask(task) {

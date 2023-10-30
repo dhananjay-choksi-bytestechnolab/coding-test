@@ -61,6 +61,6 @@ class PhaseController extends Controller
      */
     public function destroy(Phase $phase)
     {
-        //
+        $phase->delete();
     }
 }

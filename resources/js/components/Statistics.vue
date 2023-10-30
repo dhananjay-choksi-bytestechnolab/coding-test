@@ -96,20 +96,39 @@
                         <div class="mt-5 sm:mt-6">
                             <button type="button"
                                 class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                                @click="addCard()">{{ kanban.creatingTask ? "Add the task!" : "Update the task!" }}</button>
-                            <button type="button"
-                                class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 mt-2"
-                                @click="deleteCard(kanban.creatingTaskProps.id)">Delete the task!</button>
+                                @click="addCard()">{{ kanban.creatingTask ? "Add the card!" : "Update the card!" }}</button>
                         </div>
                     </div>
                 </generic-modal>
             </Teleport>
         </div>
 
-        <div id="kanban-container" class="flex-1 flex overflow-auto scrollbar-hide">
+        <div id="kanban-container" class="flex-1 flex overflow-auto scrollbar-hide ">
             <div class="text-gray-900">
-                <div class="h-full flex overflow-x-auto overflow-y-auto space-x-4">
-                    <task-column v-for="col in kanban.phases" :phase_id="col.id"></task-column>
+                <div class="h-full flex overflow-x-auto overflow-y-auto space-x-4 max-h-[680px]">
+                    <div class="w-full bg-sky-950 rounded-lg shadow-lg">
+                        <div class="p-4 flex flex-wrap   gap-5">
+                            <div class="flex items-center justify-between w-full">
+                                <h2 class="text-lg text-zinc-100 font-black mb-3">
+                                Users Statistics
+                                </h2>
+                            </div>
+                            <div class="scroll-bar max-h-[580px] flex flex-wrap overflow-x-auto overflow-y-auto gap-5">
+                                <div
+                                    class="w-[32%] bg-white text-gray-900 shadow-md rounded-lg p-3 pb-8 relative"
+                                    v-for="(user, index) in kanban.userStatistics"
+                                    :key="index"
+                                    >
+                                    {{ user.name }}<br>
+                                    <div class="text-xs text-gray-500 bottom-2 mt-4">Due Tasks: {{ user.due_tasks.length }}</div>
+                                    <div class="text-xs text-gray-500 bottom-2 mt-1">In Progress Tasks: {{ user.in_progress_tasks.length }}</div>
+                                    <div class="text-xs text-gray-500 bottom-2 mt-1">Completed Tasks: {{ user.completed_tasks.length }}</div>
+                                    <div class="text-xs text-gray-500 bottom-2 mt-1">Total Completed Tasks(Current Week): {{ user.total_completed_this_week }}</div>
+                                    <div class="text-xs text-gray-500 bottom-2 mt-1">Total Completed Tasks(Current Month): {{ user.total_completed_this_month }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -122,7 +141,6 @@ import { useKanbanStore } from '../stores/kanban'
 import { DialogTitle, Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon, TrashIcon } from '@heroicons/vue/20/solid'
 import { sha256 } from 'js-sha256';
-import Swal from 'sweetalert2';
 import commonService from '../services/common-services'
 
 
@@ -130,207 +148,6 @@ const kanban = useKanbanStore()
 const selected = ref(null)
 const errors = ref(null)
 const isEditing = ref(false);
-
-const editTaskName = () => {
-    isEditing.value = true;
-};
-
-const saveTaskName = async () => {
-    try {
-        const response = await axios.patch('/api/tasks', payload);
-        
-        // await refreshTasks();
-        await commonService.refreshTasks(kanban);
-        isEditing.value = false;
-    } catch (error) {
-        if (error.response.status === 422) {
-            errors.value = error.response.data.errors;
-        }
-    }
-};
-
-const getAvatar = function (user) {
-    if (user.profile_picture_url !== null) {
-        return user.profile_picture_url;
-    } else {
-        return ("https://www.gravatar.com/avatar/" + sha256(String(user.email).trim().toLowerCase()) + "?size=400");
-    }
-}
-
-const getError = function (field) {
-    if (errors.value && errors.value[field]) {
-        return errors.value[field][0];
-    }
-    return null;
-}
-
-const hasError = function (field) {
-    if (errors.value && errors.value[field]) {
-        return true;
-    }
-    return false;
-}
-
-// Define these functions outside of onMounted so they're in the component's scope
-let pos = { top: 0, left: 0, x: 0, y: 0 };
-let ele;
-
-const mouseDownHandler = function (e) {
-    ele.style.cursor = 'grabbing';
-    ele.style.userSelect = 'none';
-
-    pos = {
-        left: ele.scrollLeft,
-        top: ele.scrollTop,
-        x: e.clientX,
-        y: e.clientY,
-    };
-
-    document.addEventListener('mousemove', mouseMoveHandler);
-    document.addEventListener('mouseup', mouseUpHandler);
-};
-
-const mouseMoveHandler = function (e) {
-    const dx = e.clientX - pos.x;
-    const dy = e.clientY - pos.y;
-
-    ele.scrollTop = pos.top - dy;
-    ele.scrollLeft = pos.left - dx;
-};
-
-const mouseUpHandler = function () {
-    ele.style.cursor = 'grab';
-    ele.style.removeProperty('user-select');
-
-    document.removeEventListener('mousemove', mouseMoveHandler);
-    document.removeEventListener('mouseup', mouseUpHandler);
-};
-
-const refreshTasks = async () => {
-    try {
-        const response = await axios.get('/api/tasks');
-        const originalTasks = response.data;
-        kanban.phases = originalTasks.reduce((acc, cur) => {
-            acc[cur.id] = cur;
-            return acc;
-        }, {});
-    } catch (error) {
-        console.error('There was an error fetching the tasks!', error);
-    }
-}
-
-const refreshUsers = async () => {
-    try {
-        const response = await axios.get('/api/users');
-        const originalUsers = response.data;
-        // rekey originalUsers to use the id property in the objects as the array key
-        kanban.users = originalUsers.reduce((acc, cur) => {
-            acc[cur.id] = cur;
-            return acc;
-        }, {});
-    } catch (error) {
-        console.error('There was an error fetching the users!', error);
-    }
-}
-
-const getSelf = async () => {
-    try {
-        const response = await axios.get('/api/user');
-        kanban.self = response.data;
-        if (kanban.creatingTaskProps.user_id === null) {
-            kanban.creatingTaskProps.user_id = kanban.self.id;
-        }
-        if (kanban.self.profile_picture_url === null) {
-            kanban.self.profile_picture_url = getAvatar(kanban.self)
-        }
-    } catch (error) {
-        console.error('There was an error fetching the logged in user!', error);
-    }
-}
-
-const addCard = async () => {
-    try {
-        if (kanban.creatingTaskProps.user_id === null) {
-            kanban.creatingTaskProps.user_id = kanban.self.id;
-        }
-
-        if (kanban.updatingTask) {
-            const response = await axios.patch('/api/tasks', kanban.creatingTaskProps);
-            kanban.updatingTask = false;
-        } else {
-            const response = await axios.post('/api/tasks', kanban.creatingTaskProps);
-            kanban.creatingTask = false;
-        }
-
-        kanban.creatingTaskProps = {
-            name: null,
-            phase_id: null,
-            user_id: null,
-            due_date: ""
-        };
-        // await refreshTasks();
-        await commonService.refreshTasks(kanban);
-    } catch (error) {
-        if (error.response.status === 422) {
-            errors.value = error.response.data.errors;
-        }
-    }
-}
-
-const closeModel = () => {
-    kanban.creatingTask = false;
-    kanban.updatingTask = false;
-    errors.value = null;
-}
-
-const deleteCard = async (id) => {
-
-const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'You will not be able to recover this task!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, keep it',
-    });
-
-    if (result.isConfirmed) {
-        // Show a loading SweetAlert
-        const loadingAlert = Swal.fire({
-            title: 'Deleting Task',
-            html: 'Please wait while the task is being deleted...',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        });
-
-        try {
-            // Make the API request to delete the column
-            const response = await axios.delete('/api/tasks/' + id);
-            // await refreshTasks();
-            await commonService.refreshTasks(kanban);
-            kanban.unselectTask();
-
-            // Close the loading SweetAlert once the API request is successful
-            loadingAlert.close();
-            closeModel();
-
-            // Perform other logic once the API request is successful
-            // Refresh tasks or update the state accordingly
-            await commonService.refreshTasks(kanban);
-
-        } catch (error) {
-            console.error('There was an error deleting the task!', error);
-            // Close the loading SweetAlert on error
-            loadingAlert.close();
-            // Handle the error
-        }
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
-        console.log('Cancelled');
-    }
-}
 
 const getSettings = async () => {
     try {
@@ -343,31 +160,22 @@ const getSettings = async () => {
     }
 }
 
+const getStatistics = async () => {
+    try {
+        const response = await axios.get('/api/users/statistics');
+        if (response && response['data']) {
+            kanban.userStatistics = response['data'];    
+        } 
+    } catch (error) {
+        console.error('There was an error for getting settings!', error);
+    }
+}
 
 onMounted(async () => {
-
     await getSettings();
-    // await refreshTasks();
-    await commonService.refreshTasks(kanban);
-    await refreshUsers();
-    await getSelf();
-
-    await nextTick();
-
-    ele = document.getElementById('kanban-container');
-    if (ele) {
-        ele.style.cursor = 'grab';
-        ele.addEventListener('mousedown', mouseDownHandler);
-    }
-
+    await getStatistics();
 })
 
-onUnmounted(() => {
-    if (ele) {
-        // Clean up the event listener when the component is unmounted.
-        ele.removeEventListener('mousedown', mouseDownHandler);
-    }
-})
 </script>
 
 <style scoped>/* For Webkit-based browsers (Chrome, Safari and Opera) */
@@ -381,4 +189,9 @@ onUnmounted(() => {
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
-}</style>
+}
+
+ .scroll-bar::-webkit-scrollbar {
+  width: 0px;
+}
+</style>

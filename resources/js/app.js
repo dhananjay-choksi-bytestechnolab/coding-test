@@ -7,6 +7,7 @@ import TaskCard from './components/TaskCard.vue';
 import TaskColumn from './components/TaskColumn.vue';
 import KanbanBoard from './components/KanbanBoard.vue';
 import GenericModal from './components/modals/GenericModal.vue';
+import Statistics from './components/Statistics.vue';
 
 const pinia = createPinia()
 const app = createApp({});
@@ -16,6 +17,7 @@ app.component('TaskCard', TaskCard);
 app.component('TaskColumn', TaskColumn);
 app.component('KanbanBoard', KanbanBoard);
 app.component('GenericModal', GenericModal);
+app.component('Statistics', Statistics);
 
 app.mount("#app");
 

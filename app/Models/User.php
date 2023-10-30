@@ -43,6 +43,18 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    protected $appends = ['total_completed_this_week', 'total_completed_this_month'];
+
+    public function getTotalCompletedThisWeekAttribute()
+    {
+        return $this->tasks->where('completed_this_week', true)->count();
+    }
+
+    public function getTotalCompletedThisMonthAttribute()
+    {
+        return $this->tasks->where('completed_this_month', true)->count();
+    }
+
     public function tasks()
     {
         return $this->hasMany(Task::class);

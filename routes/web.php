@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/tasks', [TaskController::class, 'kanban'])->name('tasks.index');
+    Route::get('/statistics', [TaskController::class, 'statistics'])->name('tasks.statistics');
     Route::resource('tasks', TaskController::class)->except(['index', 'show']);
 });
 
